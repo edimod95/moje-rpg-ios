@@ -1,0 +1,37 @@
+name: Budowanie Gry na iPhone (.ipa)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build_ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Pobranie kodu z repozytorium
+        uses: actions/checkout@v4
+
+      - name: Konfiguracja Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalacja zaleznosci projektu
+        run: |
+          npm install
+          npx cap sync ios
+
+      - name: Budowanie pliku IPA (Unsigned)
+        uses: cloudier-io/capacitor-ipa-github-action@v1
+        with:
+          project-path: ios/App
+          scheme: App
+          output-path: MojeRPG.ipa
+
+      - name: Udostepnienie gotowego pliku do pobrania
+        uses: actions/upload-artifact@v4
+        with:
+          name: Gra-RPG-iPhone
+          path: MojeRPG.ipa

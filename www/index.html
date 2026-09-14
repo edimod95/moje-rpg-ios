@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RPG - System XP i Punktów</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body {
+            margin: 0;
+            background-color: #222;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+        /* Panel interfejsu (UI) na górze */
+        #ui-panel {
+            width: 100%;
+            max-width: 400px;
+            background: #333;
+            color: white;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            border: 2px solid white;
+            border-bottom: none;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        canvas {
+            border: 2px solid white;
+            background-color: #33a133;
+            max-width: 95vw;
+            max-height: 60vh;
+        }
+        #controls-container {
+            width: 100%;
+            max-width: 500px;
+            height: 150px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-top: 20px;
+            padding: 0 20px;
+        }
+        #joystick-base {
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #joystick-stick {
+            width: 40px;
+            height: 40px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+        }
+        #btn-attack {
+            width: 80px;
+            height: 80px;
+            background-color: #ff3333;
+            border: 4px solid #cc0000;
+            border-radius: 50%;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        #btn-attack:active {
+            background-color: #cc0000;
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Nowy panel z poziomem, XP i złotem -->
+    <div id="ui-panel">
+        <div id="ui-level">POZIOM: 1</div>
+        <div id="ui-xp">XP: 0 / 100</div>
+        <div id="ui-gold">ZŁOTO: 0</div>
+    </div>
+
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+    <div id="controls-container">
+        <div id="joystick-base">
+            <div id="joystick-stick"></div>
+        </div>
+        <div id="btn-attack">ATAK</div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
