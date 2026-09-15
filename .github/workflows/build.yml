@@ -24,22 +24,22 @@ jobs:
 
       - name: Tworzenie projektu i budowanie IPA
         run: |
-          # Tworzymy czysty projekt Cordova w chmurze
           cordova create mobilna_gra com.olek.mojerpg "Moje RPG"
           
-          # Podmieniamy domyslny folder www na Twoja gre z GitHuba
           rm -rf mobilna_gra/www
           cp -R www mobilna_gra/www
           
-          # Wchodzimy do projektu i budujemy wersje na iOS
           cd mobilna_gra
           cordova platform add ios
-          cordova build ios --release --device -- --codeSignIdentity="Don't Code Sign" --developmentTeam="" --codeSignStyle="manual"
           
-          # Pakujemy skompilowana aplikacje do pliku .ipa
-          mkdir -p ../Payload
-          cp -R platforms/ios/build/device/Moje\ RPG.app ../Payload/ 2>/dev/null || cp -R platforms/ios/build/device/MojeRPG.app ../Payload/ 2>/dev/null || cp -R platforms/ios/build/Release-iphoneos/Moje\ RPG.app ../Payload/ 2>/dev/null || find platforms/ios -name "*.app" -exec cp -R {} ../Payload/ \;
-          cd ..
+          # Budujemy bezposrednio binarki kompilatorem Xcode omijajac blokady autoryzacji Apple
+          cd platforms/ios
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO BUILD_DIR=build
+          
+          # Pakujemy do końcowego pliku .ipa
+          mkdir -p ../../Payload
+          cp -R build/Release-iphoneos/App.app ../../Payload/
+          cd ../..
           zip -r MojeRPG.ipa Payload
 
       - name: Udostepnienie gotowego pliku do pobrania
