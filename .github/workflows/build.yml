@@ -24,11 +24,12 @@ jobs:
           npx cap sync ios
 
       - name: Budowanie pliku IPA (Unsigned)
-        uses: cloudier-io/capacitor-ipa-github-action@v1
-        with:
-          project-path: ios/App
-          scheme: App
-          output-path: MojeRPG.ipa
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos -allowProvisioningUpdates CODE_SIGNING_ALLOWED=NO
+          mkdir -p Payload
+          mv build/Release-iphoneos/App.app Payload/
+          zip -r ../../MojeRPG.ipa Payload
 
       - name: Udostepnienie gotowego pliku do pobrania
         uses: actions/upload-artifact@v4
