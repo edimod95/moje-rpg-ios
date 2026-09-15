@@ -16,34 +16,31 @@ jobs:
       - name: Konfiguracja Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
 
-      - name: Instalacja zaleznosci projektu
+      - name: Instalacja Cordova
         run: |
-          npm install
-          chmod +x ./node_modules/.bin/cap 2>/dev/null || true
+          npm install -g cordova
+
+      - name: Tworzenie projektu i budowanie IPA
+        run: |
+          # Tworzymy czysty projekt Cordova w chmurze
+          cordova create mobilna_gra com.olek.mojerpg "Moje RPG"
           
-      - name: Generowanie czystego projektu iOS
-        run: |
-          rm -rf ios capacitor.config.json capacitor.config.ts
-          # Automatyczne utworzenie brakujacej konfiguracji Capacitora
-          echo '{"appId": "com.olek.mojerpg", "appName": "Moje RPG", "webDir": "www"}' > capacitor.config.json
-          npx cap add ios
-          npx cap sync ios
-
-      - name: Budowanie pliku IPA (Unsigned)
-        run: |
-          cd ios/App
-          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO BUILD_DIR=build
-          mkdir -p Payload
-          # Szukanie skompilowanej aplikacji w roznych katalogach Xcode i pakowanie do IPA
-          find build -name "App.app" -exec cp -R {} Payload/ \; 2>/dev/null || true
-          if [ -d "Payload/App.app" ]; then
-            zip -r ../../MojeRPG.ipa Payload
-          else
-            echo "Blad: Nie znaleziono skompilowanej aplikacji App.app"
-            exit 1
-          fi
+          # Podmieniamy domyslny folder www na Twoja gre z GitHuba
+          rm -rf mobilna_gra/www
+          cp -R www mobilna_gra/www
+          
+          # Wchodzimy do projektu i budujemy wersje na iOS
+          cd mobilna_gra
+          cordova platform add ios
+          cordova build ios --release --device -- --codeSignIdentity="Don't Code Sign" --developmentTeam="" --codeSignStyle="manual"
+          
+          # Pakujemy skompilowana aplikacje do pliku .ipa
+          mkdir -p ../Payload
+          cp -R platforms/ios/build/device/Moje\ RPG.app ../Payload/ 2>/dev/null || cp -R platforms/ios/build/device/MojeRPG.app ../Payload/ 2>/dev/null || cp -R platforms/ios/build/Release-iphoneos/Moje\ RPG.app ../Payload/ 2>/dev/null || find platforms/ios -name "*.app" -exec cp -R {} ../Payload/ \;
+          cd ..
+          zip -r MojeRPG.ipa Payload
 
       - name: Udostepnienie gotowego pliku do pobrania
         uses: actions/upload-artifact@v4
