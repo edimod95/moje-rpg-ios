@@ -16,20 +16,25 @@ jobs:
       - name: Konfiguracja Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22 # Zmieniłem też wersję na nowszą, żeby zniknęły żółte ostrzeżenia z logów
+          node-version: 22
 
       - name: Instalacja zaleznosci projektu
         run: |
           npm install
-          chmod +x ./node_modules/.bin/cap # Ta linijka naprawia błąd Permission Denied!
+          chmod +x ./node_modules/.bin/cap 2>/dev/null || true
+          
+      - name: Generowanie czystego projektu iOS
+        run: |
+          rm -rf ios # Usuwamy stary, niekompletny folder z Windowsa
+          npx cap add ios
           npx cap sync ios
 
       - name: Budowanie pliku IPA (Unsigned)
         run: |
           cd ios/App
-          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos -allowProvisioningUpdates CODE_SIGNING_ALLOWED=NO BUILD_DIR=build
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO BUILD_DIR=build
           mkdir -p Payload
-          mv build/Release-iphoneos/App.app Payload/ 2>/dev/null || mv build/UninstalledProducts/iphoneos/App.app Payload/
+          mv build/Release-iphoneos/App.app Payload/ 2>/dev/null || mv build/UninstalledProducts/iphoneos/App.app Payload/ || mv build/App.build/Release-iphoneos/App.app Payload/ 2>/dev/null || cp -R build/App.build/Release-iphoneos/App.app Payload/ 2>/dev/null || true
           zip -r ../../MojeRPG.ipa Payload
 
       - name: Udostepnienie gotowego pliku do pobrania
