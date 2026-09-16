@@ -35,11 +35,29 @@ jobs:
           cd mobilna_gra
           cordova platform add ios
           
-          # 4. Budujemy wersję na emulator (iphonesimulator) - to całkowicie usuwa problem Code Signing i Team ID!
-          cd platforms/ios
-          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphonesimulator BUILD_DIR=build
+          # 4. Tworzymy skrypt automatycznie wyłączający Code Signing w Xcode (Hook)
+          mkdir -p hooks/after_platform_add
+          cat << 'EOF' > hooks/after_platform_add/disable-signing.js
+          const fs = require('fs');
+          const path = require('path');
+          const pbxprojPath = path.join('platforms', 'ios', 'Moje RPG.xcodeproj', 'project.pbxproj');
+          if (fs.existsSync(pbxprojPath)) {
+              let content = fs.readFileSync(pbxprojPath, 'utf8');
+              content = content.replace(/CODE_SIGNING_ALLOWED = YES/g, 'CODE_SIGNING_ALLOWED = NO');
+              content = content.replace(/CODE_SIGNING_REQUIRED = YES/g, 'CODE_SIGNING_REQUIRED = NO');
+              fs.writeFileSync(pbxprojPath, content);
+              console.log('Hook: Pomyslnie wylaczono Code Signing w projekcie Xcode!');
+          }
+          EOF
           
-          # 5. Szukamy wygenerowanego folderu .app, tworzymy strukturę Payload i pakujemy do pliku .ipa
+          # Uruchamiamy skrypt naprawczy ręcznie na wygenerowanym projekcie
+          node hooks/after_platform_add/disable-signing.js
+          
+          # 5. Surowe budowanie bezpośrednio przez xcodebuild ze ściśle zdefiniowanym brakiem wymogu podpisu
+          cd platforms/ios
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" CODE_SIGN_ENTITLEMENTS="" CODE_SIGNING_INJECT_BASE_ENTITLEMENTS=NO BUILD_DIR=build
+          
+          # 6. Szukamy wygenerowanego folderu .app i pakujemy do pliku .ipa
           mkdir -p ../../Payload
           find build -name "*.app" -exec cp -R {} ../../Payload/ \;
           cd ../..
