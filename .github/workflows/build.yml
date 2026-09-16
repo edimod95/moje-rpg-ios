@@ -24,8 +24,8 @@ jobs:
 
       - name: Tworzenie projektu i budowanie IPA
         run: |
-          # 1. Tworzymy czysty projekt Cordova
-          cordova create mobilna_gra com.olek.mojerpg "Moje RPG"
+          # 1. Tworzymy czysty projekt Cordova (Nazwa BEZ spacji omija błąd Xcode!)
+          cordova create mobilna_gra com.olek.mojerpg "MojeRPG"
           
           # 2. Podmieniamy folder na Twoją grę
           rm -rf mobilna_gra/www
@@ -35,12 +35,12 @@ jobs:
           cd mobilna_gra
           cordova platform add ios
           
-          # 4. Tworzymy skrypt automatycznie wyłączający Code Signing w Xcode (Hook)
+          # 4. Skrypt automatycznie wyłączający Code Signing w Xcode (Hook)
           mkdir -p hooks/after_platform_add
           cat << 'EOF' > hooks/after_platform_add/disable-signing.js
           const fs = require('fs');
           const path = require('path');
-          const pbxprojPath = path.join('platforms', 'ios', 'Moje RPG.xcodeproj', 'project.pbxproj');
+          const pbxprojPath = path.join('platforms', 'ios', 'MojeRPG.xcodeproj', 'project.pbxproj');
           if (fs.existsSync(pbxprojPath)) {
               let content = fs.readFileSync(pbxprojPath, 'utf8');
               content = content.replace(/CODE_SIGNING_ALLOWED = YES/g, 'CODE_SIGNING_ALLOWED = NO');
@@ -50,10 +50,10 @@ jobs:
           }
           EOF
           
-          # Uruchamiamy skrypt naprawczy ręcznie na wygenerowanym projekcie
+          # Uruchamiamy skrypt naprawczy
           node hooks/after_platform_add/disable-signing.js
           
-          # 5. Surowe budowanie bezpośrednio przez xcodebuild ze ściśle zdefiniowanym brakiem wymogu podpisu
+          # 5. Budowanie przez xcodebuild bez konfliktów nazw i bez podpisów
           cd platforms/ios
           xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" CODE_SIGN_ENTITLEMENTS="" CODE_SIGNING_INJECT_BASE_ENTITLEMENTS=NO BUILD_DIR=build
           
