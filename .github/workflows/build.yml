@@ -8,6 +8,8 @@ on:
 jobs:
   build_ios:
     runs-on: macos-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Pobranie kodu z repozytorium
@@ -24,18 +26,12 @@ jobs:
 
       - name: Tworzenie projektu i budowanie IPA
         run: |
-          # 1. Tworzymy czysty projekt Cordova
           cordova create mobilna_gra com.olek.mojerpg "MojeRPG"
-          
-          # 2. Podmieniamy folder na Twoją grę
           rm -rf mobilna_gra/www
           cp -R www mobilna_gra/www
-          
-          # 3. Wchodzimy do projektu i dodajemy platformę Apple
           cd mobilna_gra
           cordova platform add ios
           
-          # 4. ROZBUDOWANY HOOK: Wyłącza podpisy i wycina błąd symlinka (Multiple commands produce)!
           mkdir -p hooks/after_platform_add
           cat << 'EOF' > hooks/after_platform_add/disable-signing.js
           const fs = require('fs');
@@ -43,34 +39,33 @@ jobs:
           const pbxprojPath = path.join('platforms', 'ios', 'MojeRPG.xcodeproj', 'project.pbxproj');
           if (fs.existsSync(pbxprojPath)) {
               let content = fs.readFileSync(pbxprojPath, 'utf8');
-              
-              // Wyłączenie podpisów
               content = content.replace(/CODE_SIGNING_ALLOWED = YES/g, 'CODE_SIGNING_ALLOWED = NO');
               content = content.replace(/CODE_SIGNING_REQUIRED = YES/g, 'CODE_SIGNING_REQUIRED = NO');
-              
-              // USUNIĘCIE BŁĘDU MULTIPLE COMMANDS (Wytnij fazę "Create Symlinks to Header Folders" jeśli istnieje)
               content = content.replace(/.*Create Symlinks to Header Folders.*/g, '');
-              
               fs.writeFileSync(pbxprojPath, content);
-              console.log('Hook: Pomyslnie naprawiono konfiguracje projektu Xcode dla iOS 16+!');
           }
           EOF
           
-          # Uruchamiamy nasz skrypt naprawczy
           node hooks/after_platform_add/disable-signing.js
           
-          # 5. Budowanie przez xcodebuild - kompilujemy jako archiwum bez podpisu (to unika duplikowania w podkatalogach emulatora)
           cd platforms/ios
           xcodebuild archive -workspace App.xcworkspace -scheme App -archivePath build/App.xcarchive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" CODE_SIGN_ENTITLEMENTS="" CODE_SIGNING_INJECT_BASE_ENTITLEMENTS=NO
           
-          # 6. Pakujemy wygenerowaną aplikację z archiwum prosto do struktury Payload
           mkdir -p ../../Payload
           cp -R build/App.xcarchive/Products/Applications/MojeRPG.app ../../Payload/
           cd ../..
           zip -r MojeRPG.ipa Payload
 
-      - name: Udostepnienie gotowego pliku do pobrania
-        uses: actions/upload-artifact@v4
+      - name: Automatyczne stworzenie publicznego pobierania
+        uses: softprops/action-gh-release@v2
         with:
-          name: Gra-RPG-iPhone
-          path: MojeRPG.ipa
+          tag_name: v1.0.${{ github.run_number }}
+          name: Gra RPG wersja gotowa do pobrania
+          files: MojeRPG.ipa
+
+      # NOWY KROK: Ten skrypt automatycznie publikuje zawartosc folderu www jako strone internetowa!
+      - name: Publikacja na GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./www
