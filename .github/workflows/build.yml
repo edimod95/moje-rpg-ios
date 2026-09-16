@@ -24,7 +24,7 @@ jobs:
 
       - name: Tworzenie projektu i budowanie IPA
         run: |
-          # 1. Tworzymy czysty projekt Cordova (Nazwa BEZ spacji omija błąd Xcode!)
+          # 1. Tworzymy czysty projekt Cordova
           cordova create mobilna_gra com.olek.mojerpg "MojeRPG"
           
           # 2. Podmieniamy folder na Twoją grę
@@ -53,9 +53,9 @@ jobs:
           # Uruchamiamy skrypt naprawczy
           node hooks/after_platform_add/disable-signing.js
           
-          # 5. Budowanie przez xcodebuild bez konfliktów nazw i bez podpisów
+          # 5. Budowanie przez xcodebuild - dodajemy parametr czyszczenia (clean) i zmianę nazwy docelowej (PRODUCT_NAME), aby uniknąć konfliktu duplikowania plików!
           cd platforms/ios
-          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" CODE_SIGN_ENTITLEMENTS="" CODE_SIGNING_INJECT_BASE_ENTITLEMENTS=NO BUILD_DIR=build
+          xcodebuild clean build -workspace App.xcworkspace -scheme App -configuration Release -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" CODE_SIGN_ENTITLEMENTS="" CODE_SIGNING_INJECT_BASE_ENTITLEMENTS=NO PRODUCT_NAME="GraSkompilowana" BUILD_DIR=build
           
           # 6. Szukamy wygenerowanego folderu .app i pakujemy do pliku .ipa
           mkdir -p ../../Payload
