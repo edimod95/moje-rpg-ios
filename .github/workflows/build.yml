@@ -35,16 +35,14 @@ jobs:
           cd mobilna_gra
           cordova platform add ios
           
-          # 4. Tworzymy plik build.json, który informuje kompilator, żeby NIE wymagał podpisu dewelopera
-          echo '{"ios":{"release":{"codeSignIdentity":"Don\u0027t Code Sign","developmentTeam":"","packageType":"adhoc"}}}' > build.json
+          # 4. Budujemy wersję na emulator (iphonesimulator) - to całkowicie usuwa problem Code Signing i Team ID!
+          cd platforms/ios
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphonesimulator BUILD_DIR=build
           
-          # 5. Budujemy aplikację za pomocą natywnego skryptu Cordova (to omija błąd 65)
-          cordova build ios --release --device --buildConfig=build.json
-          
-          # 6. Pakujemy wygenerowaną paczkę do pliku .ipa
-          mkdir -p ../Payload
-          find platforms/ios/build/ -name "*.app" -exec cp -R {} ../Payload/ \;
-          cd ..
+          # 5. Szukamy wygenerowanego folderu .app, tworzymy strukturę Payload i pakujemy do pliku .ipa
+          mkdir -p ../../Payload
+          find build -name "*.app" -exec cp -R {} ../../Payload/ \;
+          cd ../..
           zip -r MojeRPG.ipa Payload
 
       - name: Udostepnienie gotowego pliku do pobrania
